@@ -1,4 +1,4 @@
 # WDFW
 
 ### Contents
-This folder contains code an files associated with estimating recreational harvest effort for shrimp methods workshop. Includes code to conduct analysis and create plots.
+This folder contains code an files (code, data, etc) for various projects of the Washington Dept of Fish and Wildlife Puget Sound Crustacean Unit.
