@@ -102,6 +102,15 @@ shrimp_weights_yes_2<-subset(creel_dat,weight_per_shrimp>0 & Spot_Shrimp_Heads_O
 shrimp_weights_all_1<-subset(creel_dat,weight_per_shrimp>0 & Date=="5/11/2019")
 shrimp_weights_all_2<-subset(creel_dat,weight_per_shrimp>0 & Date=="5/15/2019")
 
+#create a data.frame to hold the bootstrap samples
+#set the number of bootstrap samples
+bs_num=200
+
+boot.data<-matrix(NA,nrow(shrimp_weights_all_boot),bs_num)
+
+
+for(i in 1:bs_num){
+
 #drawing the bootstrap samples
 shrimp_weights_all_1$boot<-sample(shrimp_weights_yes_1$weight_per_shrimp, nrow(shrimp_weights_all_1),replace = T)
 shrimp_weights_all_2$boot<-sample(shrimp_weights_yes_2$weight_per_shrimp, nrow(shrimp_weights_all_2),replace = T)
@@ -109,16 +118,30 @@ shrimp_weights_all_2$boot<-sample(shrimp_weights_yes_2$weight_per_shrimp, nrow(s
 #combining them again
 shrimp_weights_all_boot<-rbind(shrimp_weights_all_1,shrimp_weights_all_2)
 
-mean_shrimp_weights_boot<-shrimp_weights_all_boot%>%group_by(Date) %>% summarise(mean_weight_per_shrimp=mean(boot,na.rm = T),sd_weight_per_shrimp=sd(boot,na.rm=T), n = length(Spot_Shrimp_Heads_On))
+#populate the matrix
+boot.data[,i]<-shrimp_weights_all_boot$boot
+}
+  
+
+boot.data.full<-data.frame(Date=shrimp_weights_all_boot$Date)
+boot.data.full<-cbind(boot.data.full,as.data.frame(boot.data))
+boot.data.melt<-melt(boot.data.full)
+
+
+mean_shrimp_weights_boot<-boot.data.melt%>%group_by(Date,variable) %>% summarise(mean_weight_per_shrimp=mean(value,na.rm = T),sd_weight_per_shrimp=sd(value,na.rm=T), n = length(variable))
+
+mean_shrimp_weights_boot_final<-boot.data.melt%>%group_by(Date) %>% summarise(mean_weight_per_shrimp=mean(value,na.rm = T),sd_weight_per_shrimp=sd(value,na.rm=T))
+
+
 
 #making the plot
-ggplot(shrimp_weights_all_boot, aes(x=boot))+
+ggplot(mean_shrimp_weights_boot, aes(x=mean_weight_per_shrimp))+
   geom_histogram(color="black",alpha=0.8, position="identity")+
   theme_bw()+
   guides(fill=guide_legend(title="Heads On"))+
   xlab("Weight per shrimp (lbs)")+
   ylab("Frequency")+
-  geom_vline(dat=mean_shrimp_weights_boot, aes(xintercept=mean_weight_per_shrimp), color = "grey20",lwd=1,lty=2)+
+  geom_vline(dat=mean_shrimp_weights_boot_final, aes(xintercept=mean_weight_per_shrimp), color = "grey20",lwd=1,lty=2)+
   facet_grid(Date~.)+
   ggtitle("Weight per Shrimp")
 
