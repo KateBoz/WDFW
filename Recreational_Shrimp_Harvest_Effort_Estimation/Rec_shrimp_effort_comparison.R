@@ -39,7 +39,7 @@ load_libraries()
 
 
 # Set working directory
-wd<-("D:\\WDFW\\MANAGEMENT\\SHRIMP\\2019_Shrimp_Methods_Reveiw\\methods_comparison")
+wd<-("D:\\WDFW\\MANAGEMENT\\SHRIMP\\Recreational\\2019_Shrimp_Methods_Reveiw\\methods_comparison\\Recreational_Shrimp_Harvest_Effort_Estimation")
 setwd(wd)
 
 #enter the creel data
@@ -89,6 +89,39 @@ ggplot(creel_dat, aes(x=weight_per_shrimp, fill=Spot_Shrimp_Heads_On))+
   geom_vline(dat=shrimp_weights, aes(xintercept=mean_weight_per_shrimp), color = "grey20",lwd=1,lty=2)+
   facet_grid(Date~.)+
   ggtitle("Weight per Shrimp")
+
+
+##############################################################################################
+# Perhaps we need to confirm the mean shrimp weight is good. Here I conduct a bootstrap sample of the heads on shrimp to check if the mean changes much..
+#############################################################################################
+
+#separating the dates
+shrimp_weights_yes_1<-subset(creel_dat,weight_per_shrimp>0 & Spot_Shrimp_Heads_On=="Yes"& Date=="5/11/2019")
+shrimp_weights_yes_2<-subset(creel_dat,weight_per_shrimp>0 & Spot_Shrimp_Heads_On=="Yes"& Date=="5/15/2019")
+
+shrimp_weights_all_1<-subset(creel_dat,weight_per_shrimp>0 & Date=="5/11/2019")
+shrimp_weights_all_2<-subset(creel_dat,weight_per_shrimp>0 & Date=="5/15/2019")
+
+#drawing the bootstrap samples
+shrimp_weights_all_1$boot<-sample(shrimp_weights_yes_1$weight_per_shrimp, nrow(shrimp_weights_all_1),replace = T)
+shrimp_weights_all_2$boot<-sample(shrimp_weights_yes_2$weight_per_shrimp, nrow(shrimp_weights_all_2),replace = T)
+
+#combining them again
+shrimp_weights_all_boot<-rbind(shrimp_weights_all_1,shrimp_weights_all_2)
+
+mean_shrimp_weights_boot<-shrimp_weights_all_boot%>%group_by(Date) %>% summarise(mean_weight_per_shrimp=mean(boot,na.rm = T),sd_weight_per_shrimp=sd(boot,na.rm=T), n = length(Spot_Shrimp_Heads_On))
+
+#making the plot
+ggplot(shrimp_weights_all_boot, aes(x=boot))+
+  geom_histogram(color="black",alpha=0.8, position="identity")+
+  theme_bw()+
+  guides(fill=guide_legend(title="Heads On"))+
+  xlab("Weight per shrimp (lbs)")+
+  ylab("Frequency")+
+  geom_vline(dat=mean_shrimp_weights_boot, aes(xintercept=mean_weight_per_shrimp), color = "grey20",lwd=1,lty=2)+
+  facet_grid(Date~.)+
+  ggtitle("Weight per Shrimp")
+
 
 
 #interesting...calculating the mean weight for only shrimp with heads and also propogating the error through calculations
