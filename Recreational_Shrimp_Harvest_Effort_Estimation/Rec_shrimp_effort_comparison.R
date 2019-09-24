@@ -1,4 +1,4 @@
-##############################################################################
+==##############################################################################
 # Determining the difference in recreationa shrimp effort using the different 
 # methods, based on bouy counts, boat counts by boat survey and arial survey
 #
@@ -75,7 +75,6 @@ effort_table
 #Determine the mean pounds per shrimp from creel data
 creel_dat$weight_per_shrimp<-(creel_dat$Spot_Shrimp_Weight*0.00220462)/(creel_dat$Spot_Shrimp_No_Weighed)
 
-
 # pretty clear there is a difference in weights for shrimp with and without heads on
 shrimp_weights<-creel_dat%>%group_by(Date,Spot_Shrimp_Heads_On) %>% summarise(mean_weight_per_shrimp=mean(weight_per_shrimp,na.rm = T),sd_weight_per_shrimp=sd(weight_per_shrimp,na.rm=T), n = length(Spot_Shrimp_Heads_On))
 
@@ -89,6 +88,41 @@ ggplot(creel_dat, aes(x=weight_per_shrimp, fill=Spot_Shrimp_Heads_On))+
   geom_vline(dat=shrimp_weights, aes(xintercept=mean_weight_per_shrimp), color = "grey20",lwd=1,lty=2)+
   facet_grid(Date~.)+
   ggtitle("Weight per Shrimp")
+
+#################################################################################
+# Calculating the converted estimate for mean weight per shrimp
+#################################################################################
+
+
+creel_dat$adj_weight<-creel_dat$weight_per_shrimp
+
+for(i in 1:nrow(creel_dat))
+{if(creel_dat$Spot_Shrimp_Heads_On[i]=="No")
+
+creel_dat$adj_weight[i]=creel_dat$weight_per_shrimp[i]*2.3}
+
+#I know there is an outlier so removing it
+
+rem<-which(creel_dat$adj_weight>0.125)
+creel$dat<-creel$dat[-rem,]
+
+shrimp_weights_adj<-creel_dat%>%group_by(Date,Spot_Shrimp_Heads_On) %>% summarise(mean_weight_per_shrimp=mean(adj_weight,na.rm = T),sd_weight_per_shrimp=sd(adj_weight,na.rm=T), n = length(Spot_Shrimp_Heads_On))
+
+shrimp_weights_adj_all<-creel_dat%>%group_by(Date) %>% summarise(mean_weight_per_shrimp=mean(adj_weight,na.rm = T),sd_weight_per_shrimp=sd(adj_weight,na.rm=T), n = length(Spot_Shrimp_Heads_On))
+
+
+
+ggplot(creel_dat, aes(x=adj_weight, fill=Spot_Shrimp_Heads_On))+
+  geom_histogram(color="black",alpha=0.8)+
+  theme_bw()+
+  guides(fill=guide_legend(title="Adj Heads On"))+
+  xlab("Weight per shrimp (lbs)")+
+  ylab("Frequency")+
+  geom_vline(dat=shrimp_weights_adj_all, aes(xintercept=mean_weight_per_shrimp), color = "grey20",lwd=1,lty=2)+
+  facet_grid(Date~.)+
+  ggtitle("Weight per Shrimp")
+
+
 
 
 ##############################################################################################
@@ -146,6 +180,10 @@ ggplot(mean_shrimp_weights_boot, aes(x=mean_weight_per_shrimp))+
   ggtitle("Weight per Shrimp")
 
 
+
+#converted weights
+shrimp_weights_heads_off<-shrimp_weights[c(2,5),]
+shrimp_weights_heads_off$adj<-shrimp_weights_heads_off$mean_weight_per_shrimp*2.2
 
 #interesting...calculating the mean weight for only shrimp with heads and also propogating the error through calculations
 
