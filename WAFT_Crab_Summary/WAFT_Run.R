@@ -22,7 +22,7 @@ setwd(wd)
 
 
 #read in data
-raw<-read.csv("PS Crab_10.11.19.csv")
+raw<-read.csv("PS_Crab.csv")
 head(raw)
 sapply(raw,class)
 
@@ -64,11 +64,12 @@ full.data<-merge(raw,reg,by='Catch_Area_Code')
 
 #change the 2 to 2E
 area2<-which(full.data$Region==2 & full.data$Split_SubUnit_Code=="E")
-#area3<-which(full.data$Region==2 & full.data$Split_SubUnit_Code=="W")
+area3<-which(full.data$Region==2 & full.data$Split_SubUnit_Code=="W")
 
 #look to see what area these 2 values are
 #full.data[area2,]
 full.data$Region[area2]="2E"
+full.data$Region[area3]="2W"
 
 if(select.reg == 1){full.data<-full.data[full.data$Region%in%regs,]}
 
@@ -129,7 +130,6 @@ t.cpue<-ggplot(daily_cpue_FT, aes(x = as.factor(Landing_Date_2), y =Total_Pounds
 sale.cpue<-ggplot(daily_cpue_FT, aes(x = as.factor(Landing_Date_2), y=Total_Pounds)) +
   geom_boxplot(aes(fill = Region),outlier.colour="black", outlier.shape=8,
              outlier.size=4)+
-  stat_smooth(method="lm")+
   theme_bw()+
   ylab("Average Pounds/License/Sale")+
   xlab("Date")+
@@ -142,9 +142,9 @@ ggsave(paste0("Comm_Crab_CPUE_",year,".pdf"))
 
 
 #another approach
-pot.cpue_2<-ggplot(daily_cpue_FT, aes(x = Landing_Date_2, y =Total_Pounds/pots)) +
+pot.cpue_2<-ggplot(daily_cpue_FT, aes(x = Landing_Date_2, y =Total_Pounds)) +
   geom_point(aes(fill = Region))+
-  stat_smooth()+
+  stat_smooth(method = "loess")+
   theme_bw()+
   ylab("Average Pounds/License/Pot")+
   xlab("Date")+
